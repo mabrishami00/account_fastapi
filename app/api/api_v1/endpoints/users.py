@@ -60,3 +60,14 @@ async def user_login_otp(user_data: UserLoginOTP):
     else:
         return JSONResponse({"detail": "You have not been registered yet."}, status_code=status.HTTP_401_UNAUTHORIZED)
 
+
+@router.get("/profile", status_code=status.HTTP_200_OK)
+async def get_progile(authorization=Header(default=None)):
+    username, jti = jwt_authentication.authenticate(authorization, settings.SECRET_KEY)
+    if username:
+        result = await collection.find_one({"username": username}, projection={"_id": False, "password": False})
+        return JSONResponse(result)
+    else:
+        return JSONResponse({"detail": "You are not authenticated"}, status_code=status.HTTP_401_UNAUTHORIZED)
+
+       
