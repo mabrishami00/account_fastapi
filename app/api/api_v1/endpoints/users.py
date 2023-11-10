@@ -27,3 +27,17 @@ async def user_register(user_data: UserCreate):
 
     result = await collection.insert_one(user_data_dict)
     return str(result.inserted_id)
+
+
+@router.post("/login", status_code=status.HTTP_200_OK)
+async def user_login(user_data: UserLogin, redis=Depends(get_redis)):
+    username = user_data.username
+    password = user_data.password
+    result = await collection.find_one({"username": username, "password": password})
+    if result:
+        access_token, refresh_token, jti = jwt_authentication.generate_access_and_refresh_token(username, settings.ACCESS_KEY_EXPIRE_TIME, settings.REFRESH_KEY_EXPIRE_TIME, settings. SECRET_KEY)
+        await redis.set(jti, username)
+        return {"access_token": access_token, "refresh_token": refresh_token}
+    else:
+        return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
