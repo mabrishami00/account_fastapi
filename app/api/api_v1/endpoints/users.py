@@ -41,3 +41,22 @@ async def user_login(user_data: UserLogin, redis=Depends(get_redis)):
     else:
         return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
+
+@router.post("/login_otp", status_code=status.HTTP_200_OK)
+async def user_login_otp(user_data: UserLoginOTP):
+    username = user_data.username
+    print(username)
+    user = await collection.find_one({"username": username})
+    if user:
+        async with httpx.AsyncClient() as client:
+            url = settings.SEND_OTP_URL
+            data = {"email": user.get("email")}
+            response = await client.post(url, json=data)
+            response_text = json.loads(response.text)
+            if response.status_code == 200:
+                return JSONResponse(response_text)
+            else:
+                return JSONResponse(response_text, status_code=status.HTTP_400_BAD_REQUEST)
+    else:
+        return JSONResponse({"detail": "You have not been registered yet."}, status_code=status.HTTP_401_UNAUTHORIZED)
+
